@@ -8,6 +8,7 @@ import ActionButtons from './ActionButtons';
 import PrescriptionPage from './PrescriptionPage';
 import DiagnosisPage from './DiagnosisPage';
 import BookingPage from './BookingPage';
+import { fetcher } from '../utils/api';
 
 interface AppLayoutProps {
   onBackToHome: () => void;
@@ -34,7 +35,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onBackToHome }) => {
     formData.append('audio', file);
     
     try {
-      const response = await fetch('http://localhost:8000/voice/transcribe', {
+      const response = await fetcher('/voice/transcribe', {
         method: 'POST',
         body: formData,
       });
