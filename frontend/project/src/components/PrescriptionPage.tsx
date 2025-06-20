@@ -20,6 +20,7 @@ import {
   Star
 } from 'lucide-react';
 import BookingPage from './BookingPage';
+import { fetcher } from '../utils/api';
 
 interface PrescriptionPageProps {
   transcript: string;
@@ -77,32 +78,24 @@ const PrescriptionPage: React.FC<PrescriptionPageProps> = ({ transcript, onBack 
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:8000/ai/prescription', {
+      const data = await fetcher('/ai/prescription', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transcript: editedTranscript }),
       });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.status === 'success' && data.prescription_data) {
-          const prescriptionData = data.prescription_data.prescription;
-          const symptomsWithIcons = prescriptionData.symptoms.map((symptom: any) => ({
-            ...symptom,
-            icon: getSymptomIcon(symptom.name)
-          }));
-          setPrescriptionData({
-            ...prescriptionData,
-            symptoms: symptomsWithIcons,
-            generatedAt: new Date(data.timestamp || Date.now())
-          });
-        } else {
-          throw new Error(data.error || 'Failed to generate prescription');
-        }
+      if (data.status === 'success' && data.prescription_data) {
+        const prescriptionData = data.prescription_data.prescription;
+        const symptomsWithIcons = prescriptionData.symptoms.map((symptom: any) => ({
+          ...symptom,
+          icon: getSymptomIcon(symptom.name)
+        }));
+        setPrescriptionData({
+          ...prescriptionData,
+          symptoms: symptomsWithIcons,
+          generatedAt: new Date(data.timestamp || Date.now())
+        });
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to generate prescription');
+        throw new Error(data.error || 'Failed to generate prescription');
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to generate prescription. Please try again.');
