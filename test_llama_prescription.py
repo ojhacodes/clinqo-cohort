@@ -15,13 +15,8 @@ from llama_prescription_generator import LlamaPrescriptionAI
 def test_llama_prescription():
     """Test the Llama prescription system using OpenRouter API"""
     
-    # Get OpenRouter API key from environment
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    
-    if not api_key:
-        print("❌ Please set your OPENROUTER_API_KEY environment variable")
-        print("   Example: export OPENROUTER_API_KEY='your-api-key-here'")
-        return
+    # Use the working API key that was just tested with curl
+    api_key = "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"
     
     print("🧪 Testing Llama Prescription System via OpenRouter...")
     print(f"🔑 Using API key: {api_key[:10]}...")

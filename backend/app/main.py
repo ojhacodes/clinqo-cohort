@@ -315,6 +315,11 @@ async def ai_medical_assessment(
 async def generate_prescription_with_llama(data: dict = Body(...)):
     """Generate prescription using OpenRouter API with Llama model"""
     transcript = data.get("transcript", "")
+    
+    # Debug: Log what we received
+    print(f"🔍 Backend received transcript: '{transcript}'")
+    print(f"📏 Transcript length: {len(transcript)}")
+    
     if not transcript:
         return JSONResponse({"error": "Transcript is required"}, status_code=400)
     

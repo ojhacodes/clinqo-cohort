@@ -116,6 +116,10 @@ Return the JSON response only.
     def generate_prescription(self, transcript: str) -> Dict:
         """Generate comprehensive prescription from transcript"""
         
+        # Debug: Log what we're sending to OpenRouter
+        print(f"🤖 Llama AI sending to OpenRouter: '{transcript}'")
+        print(f"📏 Llama AI transcript length: {len(transcript)}")
+        
         # Extract symptoms from transcript
         symptoms = self.extract_symptoms_from_transcript(transcript)
         

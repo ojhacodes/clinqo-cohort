@@ -19,6 +19,7 @@ import {
   Info,
   Star
 } from 'lucide-react';
+import BookingPage from './BookingPage';
 
 interface PrescriptionPageProps {
   transcript: string;
@@ -61,37 +62,36 @@ const PrescriptionPage: React.FC<PrescriptionPageProps> = ({ transcript, onBack 
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'medications' | 'symptoms' | 'warnings'>('overview');
+  const [editedTranscript, setEditedTranscript] = useState(transcript);
+
+  useEffect(() => {
+    setEditedTranscript(transcript);
+  }, [transcript]);
 
   useEffect(() => {
     generatePrescription();
+    // eslint-disable-next-line
   }, [transcript]);
 
   const generatePrescription = async () => {
     setLoading(true);
     setError(null);
-    
     try {
       const response = await fetch('http://localhost:8000/ai/prescription', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ transcript }),
+        body: JSON.stringify({ transcript: editedTranscript }),
       });
-      
       if (response.ok) {
         const data = await response.json();
-        
         if (data.status === 'success' && data.prescription_data) {
-          // Transform backend data to frontend format
           const prescriptionData = data.prescription_data.prescription;
-          
-          // Add icons to symptoms
           const symptomsWithIcons = prescriptionData.symptoms.map((symptom: any) => ({
             ...symptom,
             icon: getSymptomIcon(symptom.name)
           }));
-          
           setPrescriptionData({
             ...prescriptionData,
             symptoms: symptomsWithIcons,
@@ -105,7 +105,6 @@ const PrescriptionPage: React.FC<PrescriptionPageProps> = ({ transcript, onBack 
         throw new Error(errorData.error || 'Failed to generate prescription');
       }
     } catch (error) {
-      console.error('Error generating prescription:', error);
       setError(error instanceof Error ? error.message : 'Failed to generate prescription. Please try again.');
     } finally {
       setLoading(false);
@@ -252,11 +251,31 @@ const PrescriptionPage: React.FC<PrescriptionPageProps> = ({ transcript, onBack 
             transition={{ delay: 0.2 }}
             className="bg-white/60 dark:bg-slate-800/70 backdrop-blur-sm border border-white/30 dark:border-slate-700/50 rounded-2xl p-6 shadow-lg h-fit"
           >
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Original Symptoms</h3>
-            <div className="bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-700/50 rounded-xl p-4 max-h-80 overflow-y-auto">
-              <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap text-sm">
-                {transcript}
-              </p>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Edit Symptoms</h3>
+            <div className="space-y-4">
+              <textarea
+                value={editedTranscript}
+                onChange={(e) => setEditedTranscript(e.target.value)}
+                className="w-full bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-700/50 rounded-xl p-4 text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap text-sm min-h-[120px] resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50"
+                placeholder="Edit your symptoms here..."
+              />
+              <button
+                onClick={generatePrescription}
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Pill className="w-4 h-4" />
+                    Generate Prescription
+                  </>
+                )}
+              </button>
             </div>
             
             {prescriptionData && (
@@ -421,7 +440,7 @@ const PrescriptionPage: React.FC<PrescriptionPageProps> = ({ transcript, onBack 
                         </div>
 
                         {/* Follow-up */}
-                        <div className="bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-800/50 rounded-xl p-4">
+                  <div className="bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-800/50 rounded-xl p-4">
                           <h4 className="font-medium text-amber-900 dark:text-amber-300 mb-2">Follow-up</h4>
                           <p className="text-sm text-amber-700 dark:text-amber-400">{prescriptionData.followUp}</p>
                         </div>
@@ -541,9 +560,9 @@ const PrescriptionPage: React.FC<PrescriptionPageProps> = ({ transcript, onBack 
                                     <span className="text-sm text-slate-700 dark:text-slate-300">{rec}</span>
                                   </div>
                                 ))}
-                              </div>
-                            </div>
-                          </div>
+                      </div>
+                    </div>
+                  </div>
                         ))}
                       </motion.div>
                     )}
@@ -597,6 +616,14 @@ const PrescriptionPage: React.FC<PrescriptionPageProps> = ({ transcript, onBack 
                             <p>
                               <strong>Side Effects:</strong> All medications can cause side effects. Monitor your response and contact your healthcare provider if you experience any adverse reactions.
                             </p>
+                          </div>
+                        </div>
+
+                        {/* Booking Appointment Section */}
+                        <div className="mt-8">
+                          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Book an Appointment</h3>
+                          <div className="rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-900/20 p-6">
+                            <BookingPage transcript={editedTranscript} onBack={() => {}} />
                           </div>
                         </div>
                       </motion.div>

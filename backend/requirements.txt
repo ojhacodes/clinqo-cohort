@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+openai-whisper
+sqlalchemy
+python-dotenv
+requests
+pydantic
+python-multipart
