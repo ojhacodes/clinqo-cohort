@@ -1,8 +1,14 @@
 fastapi
 uvicorn[standard]
-openai-whisper
 sqlalchemy
 python-dotenv
 requests
 pydantic
 python-multipart
+
+# Force CPU-only version of PyTorch and Torchaudio (required by openai-whisper)
+torch==2.1.0+cpu
+torchaudio==2.1.0+cpu
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+openai-whisper==20230606
