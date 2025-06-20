@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Brain, Loader2, Copy, Download, CheckCircle, AlertTriangle, Activity } from 'lucide-react';
+import { fetcher } from '../utils/api';
 
 interface DiagnosisPageProps {
   transcript: string;
@@ -22,19 +23,16 @@ const DiagnosisPage: React.FC<DiagnosisPageProps> = ({ transcript, onBack }) => 
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:8000/ai/diagnosis', {
+      const data = await fetcher('/ai/diagnosis', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transcript }),
       });
       
-      if (response.ok) {
-        const data = await response.json();
+      if (data.ok) {
         setDiagnosis(data.diagnosis || 'No diagnosis generated.');
       } else {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await data.json().catch(() => ({}));
         throw new Error(errorData.detail || 'Failed to generate diagnosis');
       }
     } catch (error) {
