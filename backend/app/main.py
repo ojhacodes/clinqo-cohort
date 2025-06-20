@@ -14,8 +14,8 @@ import requests
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../ai-engine/nlp'))
 
 try:
-    from prescription_generator import PrescriptionAI
-    from llama_prescription_generator import LlamaPrescriptionAI
+    from .prescription_generator import PrescriptionAI
+    from .llama_prescription_generator import LlamaPrescriptionAI
     AI_AVAILABLE = True
     print("✅ AI system imported successfully")
 except ImportError as e:
@@ -26,7 +26,7 @@ except ImportError as e:
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../ai-engine/stt'))
 
 try:
-    from whisper_stt import transcribe_audio as transcribe_whisper
+    from .whisper_stt import transcribe_audio as transcribe_whisper
     STT_AVAILABLE = True
     print("🗣️  Whisper STT imported successfully")
 except ImportError as e:
@@ -37,7 +37,7 @@ from . import models, schemas, database
 from .config import settings
 
 # Import entity extractor and prescription generator
-from entity_extractor import extract_medical_entities
+from .entity_extractor import extract_medical_entities
 
 app = FastAPI(
     title="Medical AI MCP Server",
