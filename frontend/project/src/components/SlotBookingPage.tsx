@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Calendar, Loader2, Copy, Download, CheckCircle, AlertTriangle, Clock, MapPin, User } from 'lucide-react';
+import { fetcher } from '../utils/api';
 
 interface SlotBookingPageProps {
   transcript: string;
@@ -22,7 +23,7 @@ const SlotBookingPage: React.FC<SlotBookingPageProps> = ({ transcript, onBack })
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:8000/ai/booking', {
+      const data = await fetcher('/ai/booking', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -30,11 +31,10 @@ const SlotBookingPage: React.FC<SlotBookingPageProps> = ({ transcript, onBack })
         body: JSON.stringify({ transcript }),
       });
       
-      if (response.ok) {
-        const data = await response.json();
+      if (data.ok) {
         setBookingInfo(data.booking_info || 'No booking information generated.');
       } else {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await data.json().catch(() => ({}));
         throw new Error(errorData.detail || 'Failed to generate booking information');
       }
     } catch (error) {
