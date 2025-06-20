@@ -3,13 +3,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeProvider } from './contexts/ThemeContext';
 import HeroSection from './components/HeroSection';
 import AppLayout from './components/AppLayout';
+import { fetcher } from './utils/api';
 
 type AppState = 'hero' | 'dashboard';
 
 function App() {
   const [currentView, setCurrentView] = useState<AppState>('hero');
 
-  const handleStartDiagnosis = () => {
+  const handleStartDiagnosis = async () => {
+    const data = await fetcher('/prescription/ai-assessment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript: editedTranscript }),
+    });
     setCurrentView('dashboard');
   };
 
