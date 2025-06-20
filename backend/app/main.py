@@ -12,23 +12,21 @@ import requests
 
 # NLP System Path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../ai-engine/nlp'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../ai-engine/stt'))
 
 try:
-    from .prescription_generator import PrescriptionAI
-    from .llama_prescription_generator import LlamaPrescriptionAI
+    from nlp.prescription_generator import PrescriptionAI
+    from nlp.llama_prescription_generator import LlamaPrescriptionAI
     AI_AVAILABLE = True
     print("✅ AI system imported successfully")
 except ImportError as e:
     print(f"⚠️  Could not import AI system: {e}")
     AI_AVAILABLE = False
 
-# STT System Path
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../ai-engine/stt'))
-
 try:
-    from .whisper_stt import transcribe_audio as transcribe_whisper
+    from stt.whisper_stt import transcribe_audio as transcribe_whisper
     STT_AVAILABLE = True
-    print("🗣️  Whisper STT imported successfully")
+    print("🗣️ Whisper STT imported successfully")
 except ImportError as e:
     print(f"⚠️  Could not import STT system: {e}")
     STT_AVAILABLE = False
@@ -36,8 +34,8 @@ except ImportError as e:
 from . import models, schemas, database
 from .config import settings
 
-# Import entity extractor and prescription generator
-from .entity_extractor import extract_medical_entities
+# Import entity extractor
+from nlp.entity_extractor import extract_medical_entities
 
 app = FastAPI(
     title="Medical AI MCP Server",
@@ -45,7 +43,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
@@ -58,18 +55,14 @@ ai_system = None
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize the application"""
     global ai_system
-    
     database.create_tables()
-    
     if AI_AVAILABLE:
         try:
             ai_system = PrescriptionAI(settings.OPENROUTER_API_KEY)
             print("🤖 AI system initialized successfully")
         except Exception as e:
             print(f"❌ Failed to initialize AI system: {e}")
-    
     print(f"🚀 Medical AI MCP Server started on {settings.HOST}:{settings.PORT}")
 
 @app.get("/")
@@ -83,7 +76,6 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
     return {
         "status": "healthy",
         "ai_system": "online" if ai_system else "offline",
@@ -92,63 +84,40 @@ async def health_check():
     }
 
 @app.post("/patients", response_model=schemas.Patient)
-async def create_patient(
-    patient: schemas.PatientCreate,
-    db: Session = Depends(database.get_db)
-):
+async def create_patient(patient: schemas.PatientCreate, db: Session = Depends(database.get_db)):
     existing = db.query(models.Patient).filter(models.Patient.id == patient.id).first()
     if existing:
         raise HTTPException(status_code=400, detail="Patient already exists")
-    
     db_patient = models.Patient(**patient.dict())
     db.add(db_patient)
     db.commit()
     db.refresh(db_patient)
-    
     return db_patient
 
 @app.get("/patients/{patient_id}", response_model=schemas.Patient)
-async def get_patient(
-    patient_id: str,
-    db: Session = Depends(database.get_db)
-):
+async def get_patient(patient_id: str, db: Session = Depends(database.get_db)):
     patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return patient
 
 @app.post("/appointments", response_model=schemas.Appointment)
-async def create_appointment(
-    appointment: schemas.AppointmentCreate,
-    db: Session = Depends(database.get_db)
-):
+async def create_appointment(appointment: schemas.AppointmentCreate, db: Session = Depends(database.get_db)):
     db_appointment = models.Appointment(**appointment.dict())
     db.add(db_appointment)
     db.commit()
     db.refresh(db_appointment)
-    
-    print(f"📅 New appointment created: {db_appointment.id}")
+    print(f"🗕️ New appointment created: {db_appointment.id}")
     return db_appointment
 
 @app.get("/doctor/{doctor_id}/appointments", response_model=List[schemas.Appointment])
-async def get_doctor_appointments(
-    doctor_id: str,
-    db: Session = Depends(database.get_db)
-):
-    appointments = db.query(models.Appointment).filter(
-        models.Appointment.doctor_id == doctor_id
-    ).all()
-    
-    return appointments
+async def get_doctor_appointments(doctor_id: str, db: Session = Depends(database.get_db)):
+    return db.query(models.Appointment).filter(models.Appointment.doctor_id == doctor_id).all()
 
 @app.post("/prescription/suggest")
 async def suggest_prescription(request: schemas.PrescriptionRequest):
     if not ai_system:
-        raise HTTPException(
-            status_code=503, 
-            detail="AI system not available. Please check configuration."
-        )
-    
+        raise HTTPException(status_code=503, detail="AI system not available. Please check configuration.")
     try:
         patient_info = {
             "age": request.age,
@@ -157,34 +126,23 @@ async def suggest_prescription(request: schemas.PrescriptionRequest):
             "medical_history": request.medical_history or [],
             "allergies": request.allergies or []
         }
-        
         result = ai_system.suggest_prescription(patient_info)
-        
         return {
             "status": "success",
             "patient_info": patient_info,
             "ai_result": result,
             "timestamp": datetime.now().isoformat()
         }
-        
     except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"AI assessment failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"AI assessment failed: {str(e)}")
 
 @app.post("/prescription/submit")
-async def submit_prescription(
-    prescription: schemas.PrescriptionSubmit,
-    db: Session = Depends(database.get_db)
-):
+async def submit_prescription(prescription: schemas.PrescriptionSubmit, db: Session = Depends(database.get_db)):
     db_prescription = models.Prescription(**prescription.dict())
     db.add(db_prescription)
     db.commit()
     db.refresh(db_prescription)
-    
     print(f"💊 Prescription submitted: {db_prescription.id}")
-    
     return {
         "status": "prescription_saved",
         "prescription_id": db_prescription.id,
