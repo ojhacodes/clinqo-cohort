@@ -19,8 +19,7 @@ import {
   Info,
   Star
 } from 'lucide-react';
-import BookingPage from './BookingPage';
-import { fetcher } from '../utils/api';
+import { apiRequest } from '../utils/api';
 
 interface PrescriptionPageProps {
   transcript: string;
@@ -71,33 +70,39 @@ const PrescriptionPage: React.FC<PrescriptionPageProps> = ({ transcript, onBack 
 
   useEffect(() => {
     generatePrescription();
-    // eslint-disable-next-line
-  }, [transcript]);
+  }, []);
 
   const generatePrescription = async () => {
     setLoading(true);
     setError(null);
+    
     try {
-      const data = await fetcher('/ai/prescription', {
+      const response = await apiRequest('/ai/prescription', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transcript: editedTranscript }),
       });
-      if (data.status === 'success' && data.prescription_data) {
-        const prescriptionData = data.prescription_data.prescription;
-        const symptomsWithIcons = prescriptionData.symptoms.map((symptom: any) => ({
-          ...symptom,
-          icon: getSymptomIcon(symptom.name)
-        }));
-        setPrescriptionData({
-          ...prescriptionData,
-          symptoms: symptomsWithIcons,
-          generatedAt: new Date(data.timestamp || Date.now())
-        });
+      
+      if (response.ok && response.data) {
+        const prescriptionData = response.data.prescription_data?.prescription;
+        if (prescriptionData) {
+          const symptomsWithIcons = prescriptionData.symptoms?.map((symptom: any) => ({
+            ...symptom,
+            icon: getSymptomIcon(symptom.name)
+          })) || [];
+          
+          setPrescriptionData({
+            ...prescriptionData,
+            symptoms: symptomsWithIcons,
+            generatedAt: new Date(response.data.timestamp || Date.now())
+          });
+        } else {
+          throw new Error('No prescription data received');
+        }
       } else {
-        throw new Error(data.error || 'Failed to generate prescription');
+        throw new Error(response.error || 'Failed to generate prescription');
       }
     } catch (error) {
+      console.error('Error generating prescription:', error);
       setError(error instanceof Error ? error.message : 'Failed to generate prescription. Please try again.');
     } finally {
       setLoading(false);
@@ -433,7 +438,7 @@ const PrescriptionPage: React.FC<PrescriptionPageProps> = ({ transcript, onBack 
                         </div>
 
                         {/* Follow-up */}
-                  <div className="bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-800/50 rounded-xl p-4">
+                        <div className="bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-800/50 rounded-xl p-4">
                           <h4 className="font-medium text-amber-900 dark:text-amber-300 mb-2">Follow-up</h4>
                           <p className="text-sm text-amber-700 dark:text-amber-400">{prescriptionData.followUp}</p>
                         </div>
@@ -553,9 +558,9 @@ const PrescriptionPage: React.FC<PrescriptionPageProps> = ({ transcript, onBack 
                                     <span className="text-sm text-slate-700 dark:text-slate-300">{rec}</span>
                                   </div>
                                 ))}
-                      </div>
-                    </div>
-                  </div>
+                              </div>
+                            </div>
+                          </div>
                         ))}
                       </motion.div>
                     )}
@@ -609,14 +614,6 @@ const PrescriptionPage: React.FC<PrescriptionPageProps> = ({ transcript, onBack 
                             <p>
                               <strong>Side Effects:</strong> All medications can cause side effects. Monitor your response and contact your healthcare provider if you experience any adverse reactions.
                             </p>
-                          </div>
-                        </div>
-
-                        {/* Booking Appointment Section */}
-                        <div className="mt-8">
-                          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Book an Appointment</h3>
-                          <div className="rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-900/20 p-6">
-                            <BookingPage transcript={editedTranscript} onBack={() => {}} />
                           </div>
                         </div>
                       </motion.div>

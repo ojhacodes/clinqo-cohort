@@ -8,7 +8,7 @@ import ActionButtons from './ActionButtons';
 import PrescriptionPage from './PrescriptionPage';
 import DiagnosisPage from './DiagnosisPage';
 import BookingPage from './BookingPage';
-import { fetcher } from '../utils/api';
+import { apiRequest } from '../utils/api';
 
 interface AppLayoutProps {
   onBackToHome: () => void;
@@ -32,22 +32,20 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onBackToHome }) => {
     setIsProcessing(true);
     
     const formData = new FormData();
-    formData.append('audio', file);
+    formData.append('file', file);
     
     try {
-      const response = await fetcher('/voice/transcribe', {
+      const response = await apiRequest('/voice/transcribe', {
         method: 'POST',
         body: formData,
       });
       
-      if (response.ok) {
-        const data = await response.json();
+      if (response.ok && response.data) {
         setTranscriptionData({
-          transcript: data.transcript || 'No transcript available'
+          transcript: response.data.transcript || 'No transcript available'
         });
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Upload failed');
+        throw new Error(response.error || 'Upload failed');
       }
     } catch (error) {
       console.error('Error uploading file:', error);
