@@ -7,6 +7,8 @@ import json
 from datetime import datetime
 from typing import List
 from fastapi.responses import JSONResponse
+from dotenv import load_dotenv
+import requests
 
 # NLP System Path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../ai-engine/nlp'))
@@ -272,14 +274,61 @@ async def test_ai_system():
 
 @app.post("/voice/transcribe")
 async def transcribe_voice(file: UploadFile = File(...)):
-    if not STT_AVAILABLE:
-        return JSONResponse({"error": "Whisper STT not available"}, status_code=503)
+    # Load Replicate API token from environment
+    replicate_token = os.getenv("REPLICATE_API_TOKEN")
+    if not replicate_token:
+        return JSONResponse({"error": "Replicate API token not configured. Please set REPLICATE_API_TOKEN in your .env."}, status_code=500)
+
+    # Save uploaded file temporarily
     temp_audio_path = f"temp_{file.filename}"
     with open(temp_audio_path, "wb") as f:
         f.write(await file.read())
+
     try:
-        transcript = transcribe_whisper(temp_audio_path)
-        return JSONResponse({"transcript": transcript})
+        # Upload file to file.io
+        with open(temp_audio_path, "rb") as audio_file:
+            file_io_resp = requests.post("https://file.io", files={"file": audio_file})
+        if file_io_resp.status_code != 200:
+            return JSONResponse({"error": f"Failed to upload file to file.io: {file_io_resp.text}"}, status_code=500)
+        file_io_data = file_io_resp.json()
+        file_url = file_io_data.get("link") or file_io_data.get("url")
+        if not file_url:
+            return JSONResponse({"error": "file.io did not return a file URL."}, status_code=500)
+
+        # Prepare Replicate API request
+        replicate_api_url = "https://api.replicate.com/v1/predictions"
+        model_version = "4c07ae671e5bfddcfce315f0dca3dff0be3b610e8e3785f90c2ab2224ecf33ba"
+        headers = {
+            "Authorization": f"Token {replicate_token}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "version": model_version,
+            "input": {
+                "audio": file_url
+            }
+        }
+        replicate_resp = requests.post(replicate_api_url, headers=headers, json=payload)
+        if replicate_resp.status_code != 201:
+            return JSONResponse({"error": f"Replicate API error: {replicate_resp.text}"}, status_code=500)
+        replicate_data = replicate_resp.json()
+        # The Replicate API is async, so we need to poll for completion
+        prediction_url = replicate_data.get("urls", {}).get("get")
+        if not prediction_url:
+            return JSONResponse({"error": "Replicate did not return a prediction URL."}, status_code=500)
+        # Poll for result
+        import time
+        for _ in range(60):  # up to ~60 seconds
+            poll_resp = requests.get(prediction_url, headers=headers)
+            poll_data = poll_resp.json()
+            status = poll_data.get("status")
+            if status == "succeeded":
+                transcription = poll_data.get("output")
+                return JSONResponse({"transcript": transcription})
+            elif status == "failed":
+                return JSONResponse({"error": "Replicate prediction failed."}, status_code=500)
+            time.sleep(1)
+        return JSONResponse({"error": "Replicate prediction timed out."}, status_code=504)
     except Exception as e:
         return JSONResponse({"error": f"Transcription failed: {str(e)}"}, status_code=500)
     finally:
