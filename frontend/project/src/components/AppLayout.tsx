@@ -7,7 +7,7 @@ import TranscriptionPanel from './TranscriptionPanel';
 import ActionButtons from './ActionButtons';
 import PrescriptionPage from './PrescriptionPage';
 import DiagnosisPage from './DiagnosisPage';
-import SlotBookingPage from './SlotBookingPage';
+import BookingPage from './BookingPage';
 
 interface AppLayoutProps {
   onBackToHome: () => void;
@@ -87,7 +87,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onBackToHome }) => {
         );
       case 'booking':
         return (
-          <SlotBookingPage 
+          <BookingPage 
             transcript={transcriptionData?.transcript || ''} 
             onBack={() => setCurrentPage('input')}
           />

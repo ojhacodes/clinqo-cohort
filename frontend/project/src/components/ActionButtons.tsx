@@ -20,17 +20,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onPageChange }) => {
       delay: 0.1
     },
     {
-      id: 'diagnosis',
-      title: 'AI Diagnosis',
-      description: 'Receive detailed analysis and possible conditions from AI',
-      icon: <Brain className="w-8 h-8" />,
-      gradient: 'from-purple-500 to-pink-500',
-      hoverGradient: 'from-purple-600 to-pink-600',
-      bgColor: 'bg-purple-50 dark:bg-purple-900/20',
-      borderColor: 'border-purple-200 dark:border-purple-800',
-      delay: 0.2
-    },
-    {
       id: 'booking',
       title: 'Book Appointment',
       description: 'Schedule a consultation with healthcare professionals',
@@ -39,7 +28,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onPageChange }) => {
       hoverGradient: 'from-blue-600 to-indigo-600',
       bgColor: 'bg-blue-50 dark:bg-blue-900/20',
       borderColor: 'border-blue-200 dark:border-blue-800',
-      delay: 0.3
+      delay: 0.2
     }
   ];
 
@@ -65,7 +54,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onPageChange }) => {
       </div>
 
       {/* Action Cards */}
-      <div className="grid gap-6">
+      <div className="grid gap-6 max-w-2xl mx-auto">
         {actions.map((action) => (
           <motion.div
             key={action.id}

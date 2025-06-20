@@ -19,10 +19,16 @@ const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [editedTranscript, setEditedTranscript] = useState(transcriptionData.transcript);
+
+  // Update edited transcript when transcriptionData changes
+  React.useEffect(() => {
+    setEditedTranscript(transcriptionData.transcript);
+  }, [transcriptionData.transcript]);
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(transcriptionData.transcript);
+      await navigator.clipboard.writeText(editedTranscript);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -112,9 +118,12 @@ const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
             </div>
             <div className="flex-1">
               <h4 className="font-medium text-slate-900 dark:text-white mb-2">Transcribed Text</h4>
-              <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-                {transcriptionData.transcript}
-              </p>
+              <textarea
+                value={editedTranscript}
+                onChange={(e) => setEditedTranscript(e.target.value)}
+                className="w-full min-h-[120px] p-3 bg-white/80 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-600/50 rounded-lg text-slate-700 dark:text-slate-300 leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 dark:focus:ring-blue-400/50 dark:focus:border-blue-400 transition-all duration-200 shadow-sm focus:shadow-md"
+                placeholder="Edit the transcribed text here..."
+              />
             </div>
           </div>
         </div>

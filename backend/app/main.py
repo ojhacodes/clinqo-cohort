@@ -13,6 +13,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../ai-engine/nlp'))
 
 try:
     from prescription_generator import PrescriptionAI
+    from llama_prescription_generator import LlamaPrescriptionAI
     AI_AVAILABLE = True
     print("✅ AI system imported successfully")
 except ImportError as e:
@@ -309,6 +310,40 @@ async def ai_medical_assessment(
         "entities": entities,
         "prescription": result
     })
+
+@app.post("/ai/prescription")
+async def generate_prescription_with_llama(data: dict = Body(...)):
+    """Generate prescription using OpenRouter API with Llama model"""
+    transcript = data.get("transcript", "")
+    if not transcript:
+        return JSONResponse({"error": "Transcript is required"}, status_code=400)
+    
+    try:
+        # Use existing OpenRouter API key from settings
+        openrouter_api_key = settings.OPENROUTER_API_KEY
+        
+        if not openrouter_api_key or openrouter_api_key == "YOUR_OPENROUTER_API_KEY":
+            return JSONResponse({
+                "error": "OpenRouter API key not configured. Please set OPENROUTER_API_KEY in your environment."
+            }, status_code=500)
+        
+        # Initialize Llama prescription AI with OpenRouter
+        llama_ai = LlamaPrescriptionAI(openrouter_api_key)
+        
+        # Generate prescription
+        result = llama_ai.generate_prescription(transcript)
+        
+        return JSONResponse({
+            "status": "success",
+            "prescription_data": result,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"❌ Error generating prescription: {str(e)}")
+        return JSONResponse({
+            "error": f"Failed to generate prescription: {str(e)}"
+        }, status_code=500)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
