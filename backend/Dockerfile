@@ -3,24 +3,24 @@ FROM python:3.10-slim
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies (needed for Whisper, ffmpeg, etc.)
+# Install system dependencies (for whisper, ffmpeg, etc.)
 RUN apt-get update && apt-get install -y ffmpeg git && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install dependencies
+# Copy backend requirements and install
 COPY requirements.txt ./
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy backend code (your app)
-COPY ./app ./app
+# Copy the backend code
+COPY . .  # This copies everything in the backend/ folder
 
-# 🔥 Also copy ai-engine into the container so those .py files are available
+# Copy ai-engine from project root (IMPORTANT)
 COPY ../ai-engine ./ai-engine
 
-# Make sure app directory is in PYTHONPATH
-ENV PYTHONPATH="${PYTHONPATH}:/app:/app/app:/app/ai-engine/nlp:/app/ai-engine/stt"
+# Set Python path so that `from .prescription_generator` etc. work inside main.py
+ENV PYTHONPATH="${PYTHONPATH}:/app:/app/ai-engine:/app/ai-engine/nlp:/app/ai-engine/stt"
 
-# Expose the FastAPI port
+# Expose backend port
 EXPOSE 8000
 
-# Start FastAPI with uvicorn
+# Start the FastAPI app
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
