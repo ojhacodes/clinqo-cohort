@@ -4,11 +4,11 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y ffmpeg git && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt ./
+COPY backend/requirements.txt ./
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-COPY ./app ./app
-COPY ../ai-engine ./ai-engine
+COPY backend/app ./app
+COPY ai-engine ./ai-engine
 
 ENV PYTHONPATH="/app:/app/app:/app/ai-engine:/app/ai-engine/nlp:/app/ai-engine/stt"
 
