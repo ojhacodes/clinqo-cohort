@@ -6,9 +6,9 @@ requests
 pydantic
 python-multipart
 
-# Force CPU-only version of PyTorch and Torchaudio (required by openai-whisper)
+# Force CPU-only PyTorch + Whisper
 torch==2.1.0+cpu
 torchaudio==2.1.0+cpu
 --extra-index-url https://download.pytorch.org/whl/cpu
 
-openai-whisper==20230606
+openai-whisper==20231105
